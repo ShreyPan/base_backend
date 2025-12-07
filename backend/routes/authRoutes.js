@@ -1,12 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser, loginUser, getUserInfo } = require('../controllers/authController');
+const passport = require('passport');
+const { registerUser, loginUser, getUserInfo, googleCallback } = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { validateRegistration, validateLogin } = require('../middleware/validation');
 
 // Public routes
 router.post('/register', validateRegistration, registerUser);
 router.post('/login', validateLogin, loginUser);
+
+// Google OAuth routes
+// Redirect to Google login page
+router.get('/google', passport.authenticate('google', {
+    scope: ['profile', 'email']
+}));
+
+// Google callback after user grants permission
+router.get('/google/callback',
+    passport.authenticate('google', { failureRedirect: '/auth/login' }),
+    googleCallback
+);
 
 // Protected routes
 router.get('/profile', authMiddleware, getUserInfo);

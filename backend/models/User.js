@@ -17,16 +17,35 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: [true, 'Pass req'],
-        minlength: [6, 'Password must be at least 6 characters']
+        minlength: [6, 'Password must be at least 6 characters'],
+        select: false // Don't return password by default
+    },
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true // Allow multiple null values
+    },
+    authMethod: {
+        type: String,
+        enum: ['email', 'google'],
+        default: 'email'
+    },
+    profilePicture: {
+        type: String, // URL to Google profile picture
+        default: null
     }
 },
     {
         timestamps: true
     });
 
-// Hash password before saving
+// Hash password before saving (only if password is provided)
 userSchema.pre('save', function (next) {
+    // If user is signing up with Google, no password to hash
+    if (!this.password) {
+        return next();
+    }
+
     // Don't hash if password wasn't modified
     if (!this.isModified('password')) {
         return next();

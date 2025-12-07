@@ -110,8 +110,38 @@ const getUserInfo = async (req, res, next) => {
     }
 };
 
+// Google OAuth Callback
+const googleCallback = async (req, res, next) => {
+    try {
+        // User is attached by Passport middleware
+        const user = req.user;
+
+        const accessToken = generateToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
+
+        // In production, redirect to frontend with tokens
+        // For now, return JSON response
+        sendSuccess(res, {
+            user: {
+                id: user._id,
+                fullName: user.fullName,
+                email: user.email,
+                profilePicture: user.profilePicture,
+                authMethod: user.authMethod,
+                createdAt: user.createdAt
+            },
+            accessToken,
+            refreshToken
+        }, 'Google authentication successful', 200);
+
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
-    getUserInfo
+    getUserInfo,
+    googleCallback
 };
