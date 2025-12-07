@@ -33,6 +33,18 @@ const userSchema = new mongoose.Schema({
     profilePicture: {
         type: String, // URL to Google profile picture
         default: null
+    },
+    emailVerified: {
+        type: Boolean,
+        default: false
+    },
+    verificationCode: {
+        type: String,
+        select: false // Don't return in queries
+    },
+    verificationCodeExpiry: {
+        type: Date,
+        select: false // Don't return in queries
     }
 },
     {
@@ -40,26 +52,21 @@ const userSchema = new mongoose.Schema({
     });
 
 // Hash password before saving (only if password is provided)
-userSchema.pre('save', function (next) {
+// Hash password before saving (only if password is provided)
+userSchema.pre('save', async function () {
     // If user is signing up with Google, no password to hash
     if (!this.password) {
-        return next();
+        return;
     }
 
     // Don't hash if password wasn't modified
     if (!this.isModified('password')) {
-        return next();
+        return;
     }
 
     // Hash the password
-    bcrypt.hash(this.password, 10)
-        .then(hashedPassword => {
-            this.password = hashedPassword;
-            next();
-        })
-        .catch(error => {
-            next(error);
-        });
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
 });
 
 userSchema.methods.comparePassword = async function (candidatePassword) {
